@@ -1,11 +1,17 @@
 <script lang="ts">
 	import '../app.css';
 	import * as Sidebar from '$lib/components/ui/sidebar';
+	import Header from '$lib/components/custom/Header.svelte';
 
 	let { children } = $props();
 </script>
+<div class="flex flex-col h-screen">
+	<div class="z-20 relative">
 
-<Sidebar.Provider>
+	<Header/>
+	</div>
+	<div class="flex flex-1 overflow-hidden">
+	<Sidebar.Provider>
 	<Sidebar.Root>
 		<Sidebar.Header />
 		<Sidebar.Content>
@@ -19,3 +25,5 @@
 		<div>Audio</div>
 	</Sidebar.Inset>
 </Sidebar.Provider>
+</div>	
+</div>
