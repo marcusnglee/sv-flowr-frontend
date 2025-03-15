@@ -48,6 +48,7 @@
 		"zod": "^3.24.2"
 	},
 	"dependencies": {
+		"@mysten/enoki": "^0.5.1",
 		"@neondatabase/serverless": "^0.9.4",
 		"@node-rs/argon2": "^1.1.0",
 		"@oslojs/crypto": "^1.0.1",
