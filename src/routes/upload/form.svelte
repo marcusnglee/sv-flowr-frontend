@@ -1,22 +1,21 @@
 <script lang="ts">
 	import * as Form from '$lib/components/ui/form/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import { superForm, fileProxy, defaults } from 'sveltekit-superforms';
 	import { zod } from 'sveltekit-superforms/adapters';
+	import { type SuperValidated, type Infer, superForm, fileProxy } from 'sveltekit-superforms';
+	import { formSchema, type FormSchema } from './schema';
 	import { z } from 'zod';
 
-	const formSchema = z.object({
-		releaseTitle: z.string().min(1, 'Please create a title'),
-		releaseImage: z.instanceof(File, { message: 'Please upload a file.' })
-	});
+	let { data }: { data: { form: SuperValidated<Infer<FormSchema>> } } = $props();
 
-	const form = superForm(defaults(zod(formSchema)), {
+	const form = superForm(data.form, {
 		SPA: true,
 		validators: zod(formSchema),
 		onUpdate({ form }) {
 			if (form.valid) {
+				console.log(form.data);
 				// TODO: Use presigned urls for cover and song uploading
-				// TODO: Call an external API with form.data and presigned urls, await the result and update form
+				// TODO: Call an external API with form.data and presigned urls
 			}
 		}
 	});
