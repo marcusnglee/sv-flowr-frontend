@@ -37,5 +37,5 @@
     return params.get("state");
 	*/
 
-	let { data }: { data: PageData } = $props();
+	//let { data }: { data: PageData } = $props();
 </script>
