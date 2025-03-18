@@ -6,7 +6,12 @@ import { Transaction } from '@mysten/sui/transactions';
 import { SuiClient } from '@mysten/sui/client';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { SASProtocol, BlobServiceClient, BlobSASPermissions } from '@azure/storage-blob';
-import { SUI_ADMIN_KEY, CONTAINER_NAME, AZ_STORAGE_CN_KEY } from '$env/static/private';
+import {
+	SUI_ADMIN_KEY,
+	CONTAINER_NAME,
+	AZ_STORAGE_CN_KEY,
+	AZ_STORAGE_ACC_NAME
+} from '$env/static/private';
 import type { TrackData } from '../../upload/+page.server.js';
 
 type TrackCreatedEvent = {
@@ -26,17 +31,17 @@ const blobServiceClient = BlobServiceClient.fromConnectionString(AZ_STORAGE_CN_K
 const CONTAINER_CLIENT = blobServiceClient.getContainerClient(CONTAINER_NAME);
 
 export async function POST({ request }) {
-	const { releaseTitle, releaseType, releaseGenre, releaseDescription, releaseDate, tracks } =
-		await request.json();
+	const {
+		releaseTitle,
+		releaseType,
+		releaseGenre,
+		releaseDescription,
+		releaseDate,
+		tracks,
+		coverMimeType
+	} = await request.json();
 	// validation
-	if (
-		!releaseTitle ||
-		!releaseDate ||
-		!releaseGenre ||
-		!releaseDescription ||
-		!tracks ||
-		!releaseType
-	) {
+	if (!releaseTitle || !releaseDate || !tracks || !releaseType || !coverMimeType) {
 		error(400, 'data in request is missing or invalid');
 	}
 	const typedReleaseDate = new Date(releaseDate);
@@ -64,6 +69,7 @@ export async function POST({ request }) {
 
 	// 2. now create sui objects
 	//TODO: art cover URL, get rid of hard coding on name and address
+	const coverBlobUrl = `https://${AZ_STORAGE_ACC_NAME}.blob.core.windows.net/${CONTAINER_NAME}/${artistId}/releases/${newRelease.id}/cover`;
 	console.log('creating sui objects');
 	const dateString = typedReleaseDate.toDateString();
 	const artistName = 'test name';
@@ -76,14 +82,19 @@ export async function POST({ request }) {
 		artistName,
 		artistAddress,
 		tracks,
-		'test url'
+		coverBlobUrl
 	);
 	console.log('done. sui digest: ', suiDigest);
 
 	// 3. create signed URLs
 	console.log('creating signed URLS');
 
-	await generateTrackUploadUrls(artistId, newRelease.id, tracks);
+	const coverUploadUrl = await generateTrackUploadUrls(
+		artistId,
+		newRelease.id,
+		tracks,
+		coverMimeType
+	);
 	console.log('done with URLS. tracks: ', tracks);
 	// 4. create tracks in db
 	const trackValues = tracks.map((track: TrackData) => ({
@@ -101,7 +112,8 @@ export async function POST({ request }) {
 	// Bulk insert :)
 	const dbResponse = await db.insert(Track).values(trackValues);
 	console.log('created tracks in db. response: ', dbResponse);
-	return json({ ok: true, status: 201, suiDigest, tracks });
+	console.log('cover url on server: ', coverUploadUrl);
+	return json({ ok: true, status: 201, suiDigest, tracks, coverUploadUrl });
 }
 // TODO: cover url
 // function to create sui object for each track
@@ -169,11 +181,16 @@ async function suiCreateTracks(
 }
 
 // Function to generate SAS URLs for tracks in parallel
-async function generateTrackUploadUrls(userId: string, releaseId: string, tracks: TrackData[]) {
+async function generateTrackUploadUrls(
+	userId: string,
+	releaseId: string,
+	tracks: TrackData[],
+	coverMimeType: string
+) {
 	// config
 
-	// Create an array of promises for each track
-	const sasPromises = tracks.map(async (track) => {
+	// TODO: Create an array of promises for each track instead of awaits
+	tracks.map(async (track) => {
 		const blobName = `${userId}/releases/${releaseId}/tracks/${track.number}-${track.fileName}`;
 		const blobClient = CONTAINER_CLIENT.getBlobClient(blobName);
 		const permissions = new BlobSASPermissions();
@@ -192,6 +209,18 @@ async function generateTrackUploadUrls(userId: string, releaseId: string, tracks
 		track.blobName = blobName;
 	});
 
+	// create 1 special url for the cover
+	const blobName = `${userId}/releases/${releaseId}/cover`;
+	const blobClient = CONTAINER_CLIENT.getBlobClient(blobName);
+	const permissions = new BlobSASPermissions();
+	permissions.create = true;
+	permissions.write = true;
+	const coverUploadUrl = await blobClient.generateSasUrl({
+		permissions: permissions,
+		expiresOn: new Date(new Date().valueOf() + 15 * 60 * 1000), // active for 15 minutes
+		contentType: coverMimeType,
+		protocol: SASProtocol.Https
+	});
+	return { coverUploadUrl };
 	// Wait for all promises to complete
-	await Promise.all(sasPromises);
 }

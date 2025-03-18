@@ -67,7 +67,7 @@ const config: Config = {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			fontFamily: {
-				sans: ['Georgia']
+				sans: ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif']
 			},
 
 			keyframes: {
