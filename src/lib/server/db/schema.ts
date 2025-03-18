@@ -1,10 +1,23 @@
-import { relations, sql } from 'drizzle-orm'
-import { boolean, foreignKey, integer, pgEnum, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+import { relations, sql } from 'drizzle-orm';
+import {
+	boolean,
+	foreignKey,
+	integer,
+	pgEnum,
+	pgTable,
+	primaryKey,
+	text,
+	timestamp
+} from 'drizzle-orm/pg-core';
 
-export const ReleaseType = pgEnum('ReleaseType', ['SINGLE', 'EP', 'LP', 'COMPILATION', 'MIXTAPE'])
+export const ReleaseType = pgEnum('ReleaseType', ['SINGLE', 'EP', 'LP', 'COMPILATION', 'MIXTAPE']);
 
 export const User = pgTable('User', {
-	id: text('id').notNull().primaryKey().default(sql`cuid(1)`),
+	id: text('id')
+		.notNull()
+		.primaryKey()
+		.default(sql`gen_random_uuid()::text`),
+
 	name: text('name').notNull(),
 	image: text('image').notNull(),
 	username: text('username'),
@@ -16,152 +29,186 @@ export const User = pgTable('User', {
 	updatedAt: timestamp('updatedAt', { precision: 3 }).notNull()
 });
 
-export const Account = pgTable('Account', {
-	userId: text('userId').notNull(),
-	type: text('type').notNull(),
-	provider: text('provider').notNull(),
-	providerAccountId: text('providerAccountId').notNull(),
-	refresh_token: text('refresh_token'),
-	access_token: text('access_token'),
-	expires_at: integer('expires_at'),
-	token_type: text('token_type'),
-	scope: text('scope'),
-	id_token: text('id_token'),
-	session_state: text('session_state'),
-	createdAt: timestamp('createdAt', { precision: 3 }).notNull().defaultNow(),
-	updatedAt: timestamp('updatedAt', { precision: 3 }).notNull()
-}, (Account) => ({
-	'Account_user_fkey': foreignKey({
-		name: 'Account_user_fkey',
-		columns: [Account.userId],
-		foreignColumns: [User.id]
+export const Account = pgTable(
+	'Account',
+	{
+		userId: text('userId').notNull(),
+		type: text('type').notNull(),
+		provider: text('provider').notNull(),
+		providerAccountId: text('providerAccountId').notNull(),
+		refresh_token: text('refresh_token'),
+		access_token: text('access_token'),
+		expires_at: integer('expires_at'),
+		token_type: text('token_type'),
+		scope: text('scope'),
+		id_token: text('id_token'),
+		session_state: text('session_state'),
+		createdAt: timestamp('createdAt', { precision: 3 }).notNull().defaultNow(),
+		updatedAt: timestamp('updatedAt', { precision: 3 }).notNull()
+	},
+	(Account) => ({
+		Account_user_fkey: foreignKey({
+			name: 'Account_user_fkey',
+			columns: [Account.userId],
+			foreignColumns: [User.id]
+		})
+			.onDelete('cascade')
+			.onUpdate('cascade'),
+		Account_cpk: primaryKey({
+			name: 'Account_cpk',
+			columns: [Account.provider, Account.providerAccountId]
+		})
 	})
-		.onDelete('cascade')
-		.onUpdate('cascade'),
-	'Account_cpk': primaryKey({
-		name: 'Account_cpk',
-		columns: [Account.provider, Account.providerAccountId]
-	})
-}));
+);
 
-export const Playlist = pgTable('Playlist', {
-	id: text('id').notNull().primaryKey().default(sql`cuid(1)`),
-	name: text('name').notNull(),
-	description: text('description'),
-	isPublic: boolean('isPublic').notNull().default(true),
-	coverUrl: text('coverUrl'),
-	userId: text('userId').notNull(),
-	createdAt: timestamp('createdAt', { precision: 3 }).notNull().defaultNow(),
-	updatedAt: timestamp('updatedAt', { precision: 3 }).notNull()
-}, (Playlist) => ({
-	'Playlist_user_fkey': foreignKey({
-		name: 'Playlist_user_fkey',
-		columns: [Playlist.userId],
-		foreignColumns: [User.id]
-	})
-		.onDelete('cascade')
-		.onUpdate('cascade')
-}));
+export const Playlist = pgTable(
+	'Playlist',
+	{
+		id: text('id')
+			.notNull()
+			.primaryKey()
+			.default(sql`gen_random_uuid()::text`),
 
-export const PlaylistTrack = pgTable('PlaylistTrack', {
-	playlistId: text('playlistId').notNull(),
-	trackId: text('trackId').notNull(),
-	position: integer('position').notNull(),
-	addedAt: timestamp('addedAt', { precision: 3 }).notNull().defaultNow()
-}, (PlaylistTrack) => ({
-	'PlaylistTrack_Playlist_fkey': foreignKey({
-		name: 'PlaylistTrack_Playlist_fkey',
-		columns: [PlaylistTrack.playlistId],
-		foreignColumns: [Playlist.id]
+		name: text('name').notNull(),
+		description: text('description'),
+		isPublic: boolean('isPublic').notNull().default(true),
+		coverUrl: text('coverUrl'),
+		userId: text('userId').notNull(),
+		createdAt: timestamp('createdAt', { precision: 3 }).notNull().defaultNow(),
+		updatedAt: timestamp('updatedAt', { precision: 3 }).notNull()
+	},
+	(Playlist) => ({
+		Playlist_user_fkey: foreignKey({
+			name: 'Playlist_user_fkey',
+			columns: [Playlist.userId],
+			foreignColumns: [User.id]
+		})
+			.onDelete('cascade')
+			.onUpdate('cascade')
 	})
-		.onDelete('cascade')
-		.onUpdate('cascade'),
-	'PlaylistTrack_Track_fkey': foreignKey({
-		name: 'PlaylistTrack_Track_fkey',
-		columns: [PlaylistTrack.trackId],
-		foreignColumns: [Track.id]
-	})
-		.onDelete('cascade')
-		.onUpdate('cascade'),
-	'PlaylistTrack_cpk': primaryKey({
-		name: 'PlaylistTrack_cpk',
-		columns: [PlaylistTrack.playlistId, PlaylistTrack.trackId]
-	})
-}));
+);
 
-export const Release = pgTable('Release', {
-	id: text('id').notNull().primaryKey().default(sql`cuid(1)`),
-	title: text('title').notNull(),
-	type: ReleaseType('type').notNull(),
-	genre: text('genre'),
-	description: text('description'),
-	artistId: text('artistId').notNull(),
-	coverUrl: text('coverUrl'),
-	releaseDate: timestamp('releaseDate', { precision: 3 }).notNull(),
-	createdAt: timestamp('createdAt', { precision: 3 }).notNull().defaultNow(),
-	updatedAt: timestamp('updatedAt', { precision: 3 }).notNull()
-}, (Release) => ({
-	'Release_Artist_fkey': foreignKey({
-		name: 'Release_Artist_fkey',
-		columns: [Release.artistId],
-		foreignColumns: [User.id]
+export const PlaylistTrack = pgTable(
+	'PlaylistTrack',
+	{
+		playlistId: text('playlistId').notNull(),
+		trackId: text('trackId').notNull(),
+		position: integer('position').notNull(),
+		addedAt: timestamp('addedAt', { precision: 3 }).notNull().defaultNow()
+	},
+	(PlaylistTrack) => ({
+		PlaylistTrack_Playlist_fkey: foreignKey({
+			name: 'PlaylistTrack_Playlist_fkey',
+			columns: [PlaylistTrack.playlistId],
+			foreignColumns: [Playlist.id]
+		})
+			.onDelete('cascade')
+			.onUpdate('cascade'),
+		PlaylistTrack_Track_fkey: foreignKey({
+			name: 'PlaylistTrack_Track_fkey',
+			columns: [PlaylistTrack.trackId],
+			foreignColumns: [Track.id]
+		})
+			.onDelete('cascade')
+			.onUpdate('cascade'),
+		PlaylistTrack_cpk: primaryKey({
+			name: 'PlaylistTrack_cpk',
+			columns: [PlaylistTrack.playlistId, PlaylistTrack.trackId]
+		})
 	})
-		.onDelete('cascade')
-		.onUpdate('cascade')
-}));
+);
 
-export const Track = pgTable('Track', {
-	id: text('id').notNull().primaryKey().default(sql`cuid(1)`),
-	title: text('title').notNull(),
-	artistId: text('artistId').notNull(),
-	genre: text('genre'),
-	mimeType: text('mimeType'),
-	fileSize: integer('fileSize'),
-	duration: integer('duration'),
-	uploadedAt: timestamp('uploadedAt', { precision: 3 }).notNull().defaultNow(),
-	suiId: text('suiId').unique(),
-	streamCount: integer('streamCount').notNull(),
-	createdAt: timestamp('createdAt', { precision: 3 }).notNull().defaultNow(),
-	updatedAt: timestamp('updatedAt', { precision: 3 }).notNull(),
-	releaseId: text('releaseId').notNull(),
-	trackNumber: integer('trackNumber').notNull(),
-	blobName: text('blobName')
-}, (Track) => ({
-	'Track_artist_fkey': foreignKey({
-		name: 'Track_artist_fkey',
-		columns: [Track.artistId],
-		foreignColumns: [User.id]
+export const Release = pgTable(
+	'Release',
+	{
+		id: text('id')
+			.notNull()
+			.primaryKey()
+			.default(sql`gen_random_uuid()::text`),
+		title: text('title').notNull(),
+		type: ReleaseType('type').notNull(),
+		genre: text('genre'),
+		description: text('description'),
+		artistId: text('artistId').notNull(),
+		coverUrl: text('coverUrl'),
+		releaseDate: timestamp('releaseDate', { precision: 3 }).notNull(),
+		createdAt: timestamp('createdAt', { precision: 3 }).notNull().defaultNow(),
+		updatedAt: timestamp('updatedAt', { precision: 3 }).notNull()
+	},
+	(Release) => ({
+		Release_Artist_fkey: foreignKey({
+			name: 'Release_Artist_fkey',
+			columns: [Release.artistId],
+			foreignColumns: [User.id]
+		})
+			.onDelete('cascade')
+			.onUpdate('cascade')
 	})
-		.onDelete('cascade')
-		.onUpdate('cascade'),
-	'Track_Release_fkey': foreignKey({
-		name: 'Track_Release_fkey',
-		columns: [Track.releaseId],
-		foreignColumns: [Release.id]
-	})
-		.onDelete('cascade')
-		.onUpdate('cascade')
-}));
+);
 
-export const likedTracks = pgTable('_likedTracks', {
-	UserId: text('A').notNull(),
-	TrackId: text('B').notNull()
-}, (likedTracks) => ({
-	'_likedTracks_User_fkey': foreignKey({
-		name: '_likedTracks_User_fkey',
-		columns: [likedTracks.UserId],
-		foreignColumns: [User.id]
+export const Track = pgTable(
+	'Track',
+	{
+		id: text('id')
+			.notNull()
+			.primaryKey()
+			.default(sql`gen_random_uuid()::text`),
+		title: text('title').notNull(),
+		artistId: text('artistId').notNull(),
+		genre: text('genre'),
+		mimeType: text('mimeType'),
+		fileSize: integer('fileSize'),
+		duration: integer('duration'),
+		uploadedAt: timestamp('uploadedAt', { precision: 3 }).notNull().defaultNow(),
+		suiId: text('suiId').unique(),
+		streamCount: integer('streamCount').notNull(),
+		createdAt: timestamp('createdAt', { precision: 3 }).notNull().defaultNow(),
+		updatedAt: timestamp('updatedAt', { precision: 3 }).notNull(),
+		releaseId: text('releaseId').notNull(),
+		trackNumber: integer('trackNumber').notNull(),
+		blobName: text('blobName')
+	},
+	(Track) => ({
+		Track_artist_fkey: foreignKey({
+			name: 'Track_artist_fkey',
+			columns: [Track.artistId],
+			foreignColumns: [User.id]
+		})
+			.onDelete('cascade')
+			.onUpdate('cascade'),
+		Track_Release_fkey: foreignKey({
+			name: 'Track_Release_fkey',
+			columns: [Track.releaseId],
+			foreignColumns: [Release.id]
+		})
+			.onDelete('cascade')
+			.onUpdate('cascade')
 	})
-		.onDelete('cascade')
-		.onUpdate('cascade'),
-	'_likedTracks_Track_fkey': foreignKey({
-		name: '_likedTracks_Track_fkey',
-		columns: [likedTracks.TrackId],
-		foreignColumns: [Track.id]
+);
+
+export const likedTracks = pgTable(
+	'_likedTracks',
+	{
+		UserId: text('A').notNull(),
+		TrackId: text('B').notNull()
+	},
+	(likedTracks) => ({
+		_likedTracks_User_fkey: foreignKey({
+			name: '_likedTracks_User_fkey',
+			columns: [likedTracks.UserId],
+			foreignColumns: [User.id]
+		})
+			.onDelete('cascade')
+			.onUpdate('cascade'),
+		_likedTracks_Track_fkey: foreignKey({
+			name: '_likedTracks_Track_fkey',
+			columns: [likedTracks.TrackId],
+			foreignColumns: [Track.id]
+		})
+			.onDelete('cascade')
+			.onUpdate('cascade')
 	})
-		.onDelete('cascade')
-		.onUpdate('cascade')
-}));
+);
 
 export const UserRelations = relations(User, ({ many }) => ({
 	accounts: many(Account, {
@@ -176,7 +223,7 @@ export const UserRelations = relations(User, ({ many }) => ({
 	releasedTracks: many(Track, {
 		relationName: 'releasedTracks'
 	}),
-	likedTracks: many(TrackToUser, {
+	likedTracks: many(likedTracks, {
 		relationName: 'UserToTrackToUser'
 	})
 }));
@@ -238,7 +285,7 @@ export const TrackRelations = relations(Track, ({ many, one }) => ({
 		fields: [Track.releaseId],
 		references: [Release.id]
 	}),
-	usersWhoLike: many(TrackToUser, {
+	usersWhoLike: many(likedTracks, {
 		relationName: 'TrackToTrackToUser'
 	})
 }));

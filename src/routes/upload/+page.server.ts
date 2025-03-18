@@ -1,14 +1,15 @@
-import type { PageServerLoad, Actions } from './$types';
+import type { PageServerLoad } from './$types';
 
 export const load = (async () => {
 	return {};
 }) satisfies PageServerLoad;
 
-export const actions = {
-	default: async ({ request }) => {
-		const formData = await request.formData();
-		// validation
-		// server stuff
-		// etc.
-	}
+export type TrackData = {
+	title: string;
+	number: number;
+	fileName: string;
+	mimeType: string;
+	suiId?: string;
+	uploadUrl?: string;
+	blobName?: string;
 };

@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 export const formSchema = z.object({
-	releaseTitle: z.string().min(5, 'Release title must have at least 1 character'),
+	releaseTitle: z.string().min(1, 'Release title must have at least 1 character'),
+	releaseDate: z.instanceof(Date, { message: 'Release Date is not a Date object' }),
 	releaseImage: z.instanceof(File, { message: 'Release image is required' }),
 	releaseType: z.enum(['SINGLE', 'EP', 'LP', 'MIXTAPE', 'COMPILATION'], {
 		errorMap: () => ({ message: 'Please select a valid release type' })
