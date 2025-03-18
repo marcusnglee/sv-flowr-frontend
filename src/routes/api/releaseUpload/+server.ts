@@ -5,7 +5,7 @@ import { error, json } from '@sveltejs/kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { SuiClient } from '@mysten/sui/client';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
-import { SASProtocol, BlobServiceClient } from '@azure/storage-blob';
+import { SASProtocol, BlobServiceClient, BlobSASPermissions } from '@azure/storage-blob';
 import { SUI_ADMIN_KEY, CONTAINER_NAME, AZ_STORAGE_CN_KEY } from '$env/static/private';
 import type { TrackData } from '../../upload/+page.server.js';
 
@@ -176,21 +176,12 @@ async function generateTrackUploadUrls(userId: string, releaseId: string, tracks
 	const sasPromises = tracks.map(async (track) => {
 		const blobName = `${userId}/releases/${releaseId}/tracks/${track.number}-${track.fileName}`;
 		const blobClient = CONTAINER_CLIENT.getBlobClient(blobName);
+		const permissions = new BlobSASPermissions();
+		permissions.create = true;
+		permissions.write = true;
 
 		const sasUrl = await blobClient.generateSasUrl({
-			permissions: {
-				create: true,
-				write: false,
-				read: false,
-				add: false,
-				delete: false,
-				deleteVersion: false,
-				tag: false,
-				move: false,
-				execute: false,
-				setImmutabilityPolicy: false,
-				permanentDelete: false
-			},
+			permissions: permissions,
 			expiresOn: new Date(new Date().valueOf() + 15 * 60 * 1000), // active for 15 minutes
 			contentType: track.mimeType,
 			protocol: SASProtocol.Https

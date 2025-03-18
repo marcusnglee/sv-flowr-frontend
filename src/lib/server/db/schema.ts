@@ -161,7 +161,7 @@ export const Track = pgTable(
 		duration: integer('duration'),
 		uploadedAt: timestamp('uploadedAt', { precision: 3 }).notNull().defaultNow(),
 		suiId: text('suiId').unique(),
-		streamCount: integer('streamCount').notNull(),
+		streamCount: integer('streamCount').notNull().default(0),
 		createdAt: timestamp('createdAt', { precision: 3 }).notNull().defaultNow(),
 		updatedAt: timestamp('updatedAt', { precision: 3 }).notNull(),
 		releaseId: text('releaseId').notNull(),
