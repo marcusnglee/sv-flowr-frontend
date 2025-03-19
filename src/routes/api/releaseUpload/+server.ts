@@ -13,6 +13,7 @@ import {
 	AZ_STORAGE_ACC_NAME
 } from '$env/static/private';
 import type { TrackData } from '../../upload/+page.server.js';
+import { eq } from 'drizzle-orm/mysql-core/expressions';
 
 type TrackCreatedEvent = {
 	artist_address: string;
@@ -49,7 +50,6 @@ export async function POST({ request }) {
 	const artistId = 'testUserId';
 
 	// 1. first create Release in db
-	console.log('creating release in db');
 	const [newRelease] = await db
 		.insert(Release)
 		.values({
@@ -65,12 +65,13 @@ export async function POST({ request }) {
 	if (!newRelease.id) {
 		error(500, 'error when creating Release, has no id field');
 	}
-	console.log('done creating release in db. id: ', newRelease.id);
 
-	// 2. now create sui objects
 	//TODO: art cover URL, get rid of hard coding on name and address
 	const coverBlobUrl = `https://${AZ_STORAGE_ACC_NAME}.blob.core.windows.net/${CONTAINER_NAME}/${artistId}/releases/${newRelease.id}/cover`;
-	console.log('creating sui objects');
+	// 2. update db
+	await db.update(Release).set({ coverUrl: coverBlobUrl }).where(eq(Release.id, newRelease.id));
+
+	// 3. now create sui objects
 	const dateString = typedReleaseDate.toDateString();
 	const artistName = 'test name';
 	const artistAddress = '0x0';
@@ -84,10 +85,8 @@ export async function POST({ request }) {
 		tracks,
 		coverBlobUrl
 	);
-	console.log('done. sui digest: ', suiDigest);
 
 	// 3. create signed URLs
-	console.log('creating signed URLS');
 
 	const coverUploadUrl = await generateTrackUploadUrls(
 		artistId,
@@ -95,7 +94,6 @@ export async function POST({ request }) {
 		tracks,
 		coverMimeType
 	);
-	console.log('done with URLS. tracks: ', tracks);
 	// 4. create tracks in db
 	const trackValues = tracks.map((track: TrackData) => ({
 		title: track.title,
@@ -110,9 +108,8 @@ export async function POST({ request }) {
 	}));
 
 	// Bulk insert :)
-	const dbResponse = await db.insert(Track).values(trackValues);
-	console.log('created tracks in db. response: ', dbResponse);
-	console.log('cover url on server: ', coverUploadUrl);
+	await db.insert(Track).values(trackValues);
+
 	return json({ ok: true, status: 201, suiDigest, tracks, coverUploadUrl });
 }
 // TODO: cover url
