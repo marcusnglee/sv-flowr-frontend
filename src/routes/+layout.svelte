@@ -1,29 +1,28 @@
 <script lang="ts">
 	import '../app.css';
-	import * as Sidebar from '$lib/components/ui/sidebar';
+	import FlowrSidebar from '$lib/components/custom/FlowrSidebar.svelte';
 	import Header from '$lib/components/custom/Header.svelte';
+	import AudioPlayer from '$lib/components/custom/AudioPlayer.svelte';
+	import * as Sidebar from "$lib/components/ui/sidebar/index.js";
 
 	let { children } = $props();
 </script>
 
 <div class="flex h-screen flex-col">
-	<div class="relative z-20">
+	<div class="relative z-50">
 		<Header />
 	</div>
-	<div class="flex flex-1 overflow-hidden">
-		<Sidebar.Provider>
-			<Sidebar.Root>
-				<Sidebar.Header />
-				<Sidebar.Content>
-					<Sidebar.Group />
-					<Sidebar.Group />
-				</Sidebar.Content>
-				<Sidebar.Footer />
-			</Sidebar.Root>
-			<Sidebar.Inset>
-				{@render children()}
-				<div>Audio</div>
-			</Sidebar.Inset>
-		</Sidebar.Provider>
+	<div class="flex flex-1 overflow-auto z-1">
+		<Sidebar.Provider class='flex flex-1 overflow-hidden'>
+			<div class='flex h-full pt-4 pb-8'>
+			<FlowrSidebar />
+		</div>
+		<main class="flex-1 overflow-auto px-8">
+			  {@render children?.()}
+			</main>
+		  </Sidebar.Provider>
+	</div>
+	<div class="flex items-center w-full bg-base-300 border-t z-10">
+	<AudioPlayer />
 	</div>
 </div>
