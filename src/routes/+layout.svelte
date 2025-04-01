@@ -14,10 +14,10 @@
 	</div>
 	<div class="flex flex-1 overflow-auto z-1">
 		<Sidebar.Provider class='flex flex-1 overflow-hidden'>
-			<div class='flex h-full pt-4 pb-8'>
+			<div class='flex h-full'>
 			<FlowrSidebar />
 		</div>
-		<main class="flex-1 overflow-auto px-8">
+		<main class="flex-1 overflow-auto px-1 bg-slate-100">
 			  {@render children?.()}
 			</main>
 		  </Sidebar.Provider>
