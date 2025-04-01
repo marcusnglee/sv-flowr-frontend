@@ -59,6 +59,7 @@
 		"@oslojs/encoding": "^1.1.0",
 		"@prisma/client": "^6.5.0",
 		"@tailwindcss/typography": "^0.5.15",
+		"arctic": "^3.6.0",
 		"drizzle-orm": "^0.33.0"
 	}
 }

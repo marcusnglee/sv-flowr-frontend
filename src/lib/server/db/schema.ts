@@ -17,7 +17,6 @@ export const User = pgTable('User', {
 		.notNull()
 		.primaryKey()
 		.default(sql`gen_random_uuid()::text`),
-
 	name: text('name').notNull(),
 	image: text('image').notNull(),
 	username: text('username'),
@@ -27,6 +26,17 @@ export const User = pgTable('User', {
 	bio: text('bio'),
 	createdAt: timestamp('createdAt', { precision: 3 }).notNull().defaultNow(),
 	updatedAt: timestamp('updatedAt', { precision: 3 }).notNull()
+});
+
+export const Session = pgTable('Session', {
+	id: text('id').primaryKey(),
+	userId: text('user_id')
+		.notNull()
+		.references(() => User.id),
+	expiresAt: timestamp('expires_at', {
+		withTimezone: true,
+		mode: 'date'
+	}).notNull()
 });
 
 export const Account = pgTable(
